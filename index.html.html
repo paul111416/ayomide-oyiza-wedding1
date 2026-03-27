@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ayomide & Oyiza — Wedding Check-In</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+<!-- ══ PASTE YOUR FIREBASE CONFIG HERE ══════════════════════════════════
+     Replace the placeholder values below with your actual Firebase config.
+     Get it from: Firebase Console → Project Settings → Your Apps → Web App
+═══════════════════════════════════════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, update, remove, get }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  // ── REPLACE THIS BLOCK WITH YOUR OWN FIREBASE CONFIG ──────────────────
+  const firebaseConfig = {
+    apiKey:            "PASTE_YOUR_API_KEY_HERE",
+    authDomain:        "PASTE_YOUR_AUTH_DOMAIN_HERE",
+    databaseURL:       "PASTE_YOUR_DATABASE_URL_HERE",
+    projectId:         "PASTE_YOUR_PROJECT_ID_HERE",
+    storageBucket:     "PASTE_YOUR_STORAGE_BUCKET_HERE",
+    messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID_HERE",
+    appId:             "PASTE_YOUR_APP_ID_HERE"
+  };
+  // ──────────────────────────────────────────────────────────────────────
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // ── Initial guest data (loaded once if DB is empty) ───────────────────
+  const INITIAL_GUESTS = [
+    {id:1,name:"Emmanuel Ayira",table:1,checked:false},
+    {id:2,name:"Ijeoma Ayira",table:1,checked:false},
+    {id:3,name:"Victor Ayira",table:1,checked:false},
+    {id:4,name:"Onimisi Ayira",table:1,checked:false},
+    {id:5,name:"Kela Ukpabi",table:1,checked:false},
+    {id:6,name:"Uju Kela-Ukpabi",table:1,checked:false},
+    {id:7,name:"Chioma Ukpabi",table:1,checked:false},
+    {id:8,name:"Tochi Ukapbi",table:1,checked:false},
+    {id:9,name:"Lieve Nganji",table:1,checked:false},
+    {id:10,name:"Elder Gbadebo Abidogun",table:2,checked:false},
+    {id:11,name:"Dcns. Cecilia Abidogun",table:2,checked:false},
+    {id:12,name:"Dolapo Abidogun",table:2,checked:false},
+    {id:13,name:"Olawale Oladele",table:2,checked:false},
+    {id:14,name:"Tokunbo Oladele",table:2,checked:false},
+    {id:15,name:"Yemisi Durojaye",table:2,checked:false},
+    {id:16,name:"Segun Ayileka",table:2,checked:false},
+    {id:17,name:"Geogette Ayileka",table:2,checked:false},
+    {id:18,name:"Abigael Ayileka",table:2,checked:false},
+    {id:19,name:"Seyi Ayileka",table:2,checked:false},
+    {id:20,name:"Pastor Yemi Awodiran",table:3,checked:false},
+    {id:21,name:"Pastor Sharon Awodiran",table:3,checked:false},
+    {id:22,name:"Pastor Tim Olaoye",table:3,checked:false},
+    {id:23,name:"Rachel Olaoye",table:3,checked:false},
+    {id:24,name:"Pastor Daniel Adewumi",table:3,checked:false},
+    {id:25,name:"Dcns. Grace Adewumi",table:3,checked:false},
+    {id:26,name:"Pastor Olusayo Adekunle",table:3,checked:false},
+    {id:27,name:"Elder Yemisi Adekunle",table:3,checked:false},
+    {id:28,name:"Pastor Olawale Johnson",table:3,checked:false},
+    {id:29,name:"Rebecca Johnson",table:3,checked:false},
+    {id:30,name:"Pastor Dare Oyewo",table:4,checked:false},
+    {id:31,name:"Dcns. Ayobamii Oyewo",table:4,checked:false},
+    {id:32,name:"Pastor Tope Akinsanya",table:4,checked:false},
+    {id:33,name:"Dcns. Elizabeth Akinsanya",table:4,checked:false},
+    {id:34,name:"Pastor Chika James",table:4,checked:false},
+    {id:35,name:"Dcns. Theresa James",table:4,checked:false},
+    {id:36,name:"Pastor Kemi Odusote",table:4,checked:false},
+    {id:37,name:"Dcns. Kemi Odusote",table:4,checked:false},
+    {id:38,name:"Elder Soji Medude",table:4,checked:false},
+    {id:39,name:"Dcns. Lanre Mebude",table:4,checked:false},
+    {id:40,name:"Ayo Abu",table:5,checked:false},
+    {id:41,name:"Abraham Abu",table:5,checked:false},
+    {id:42,name:"Oluwafemi Ige",table:5,checked:false},
+    {id:43,name:"Temitope Ige",table:5,checked:false},
+    {id:44,name:"Jennifer Esenwa",table:5,checked:false},
+    {id:45,name:"Chinyelu Onuorah",table:5,checked:false},
+    {id:46,name:"Anizoba Kate",table:5,checked:false},
+    {id:47,name:"Anizoba Ogochukwu",table:5,checked:false},
+    {id:48,name:"Dise Apule Digwo",table:5,checked:false},
+    {id:49,name:"Ugo Digwo",table:5,checked:false},
+    {id:50,name:"Alero Onosode",table:6,checked:false},
+    {id:51,name:"Goke Korede",table:6,checked:false},
+    {id:52,name:"Ayodele Korede",table:6,checked:false},
+    {id:53,name:"Gregory Amaihwe",table:6,checked:false},
+    {id:54,name:"Bunmi Greg-Amaihwe",table:6,checked:false},
+    {id:55,name:"Obinna Onyegbula",table:6,checked:false},
+    {id:56,name:"Blessing Onyegbula",table:6,checked:false},
+    {id:57,name:"Opemipo Ilesanmi",table:6,checked:false},
+    {id:58,name:"Rotimi Onanuga",table:6,checked:false},
+    {id:59,name:"Bolatito Onanuga",table:6,checked:false},
+    {id:60,name:"Niyi Olaleye",table:7,checked:false},
+    {id:61,name:"Bolaji Olaleye",table:7,checked:false},
+    {id:62,name:"Omiyinka Bukola",table:7,checked:false},
+    {id:63,name:"Bosun Akindokun",table:7,checked:false},
+    {id:64,name:"Abiola Shodipo",table:7,checked:false},
+    {id:65,name:"Olutayo Shodipo",table:7,checked:false},
+    {id:66,name:"Kayode Ajao",table:7,checked:false},
+    {id:67,name:"Ope Arabambi",table:8,checked:false},
+    {id:68,name:"Winifred Chukwuemeka",table:8,checked:false},
+    {id:69,name:"Favour Ajakaiye",table:8,checked:false},
+    {id:70,name:"Hannah Monday",table:8,checked:false},
+    {id:71,name:"Joshua Stanley",table:8,checked:false},
+    {id:72,name:"Coker Yewande",table:8,checked:false},
+    {id:73,name:"Sarah Ogheneochuko",table:8,checked:false},
+    {id:74,name:"Temi Shobakin",table:8,checked:false},
+    {id:75,name:"Kamara Salamatu",table:8,checked:false},
+    {id:76,name:"Floarin Deborah",table:8,checked:false},
+    {id:77,name:"Armstrong Ozobiara",table:9,checked:false},
+    {id:78,name:"Kitan Lawuyi",table:9,checked:false},
+    {id:79,name:"Ruth Chukwu",table:9,checked:false},
+    {id:80,name:"Peter Sensuwa",table:9,checked:false},
+    {id:81,name:"Phillip Segynola",table:9,checked:false},
+    {id:82,name:"Mayowa Segynola",table:9,checked:false},
+    {id:83,name:"Ebenezer Agboola",table:9,checked:false},
+    {id:84,name:"Tumi Agboola",table:9,checked:false},
+    {id:85,name:"Wamidele Joseph",table:9,checked:false},
+    {id:86,name:"Sandile Ngwenya",table:9,checked:false},
+    {id:87,name:"Tunde Kuku",table:10,checked:false},
+    {id:88,name:"Fadekemi Kuku",table:10,checked:false},
+    {id:89,name:"Eloidor Braimah",table:10,checked:false},
+    {id:90,name:"Gloria Braimah",table:10,checked:false},
+    {id:91,name:"Deborah Braimah",table:10,checked:false},
+    {id:92,name:"Naomi Bramiah",table:10,checked:false},
+    {id:93,name:"Daniel Seun",table:10,checked:false},
+    {id:94,name:"Daniel Anu",table:10,checked:false},
+    {id:95,name:"Olofintila Ope",table:10,checked:false},
+    {id:96,name:"Adekemi Aluko",table:10,checked:false},
+    {id:97,name:"Dorcas Aderinto",table:11,checked:false},
+    {id:98,name:"Bose Akinleye",table:11,checked:false},
+    {id:99,name:"Olubunmi Taiwo",table:11,checked:false},
+    {id:100,name:"Esther Omotayo",table:11,checked:false},
+    {id:101,name:"Bukola Olofintila",table:11,checked:false},
+    {id:102,name:"Ope Olofintila",table:11,checked:false},
+    {id:103,name:"Aderonke Adebayo",table:11,checked:false},
+    {id:104,name:"Fifi Mabok",table:11,checked:false},
+    {id:105,name:"Ajaak Dawad",table:11,checked:false},
+    {id:106,name:"Evelyn Meetos",table:11,checked:false},
+    {id:107,name:"Gift Okwa",table:12,checked:false},
+    {id:108,name:"Ufuoma Muwhen",table:12,checked:false},
+    {id:109,name:"Priscila Pange",table:12,checked:false},
+    {id:110,name:"Christine Nantchouang",table:12,checked:false},
+    {id:111,name:"Dorcas Woolaston",table:12,checked:false},
+    {id:112,name:"Kunmi Banjo",table:12,checked:false},
+    {id:113,name:"Diane Alheri",table:12,checked:false},
+    {id:114,name:"Jayne Bryan",table:12,checked:false},
+    {id:115,name:"Jeremiah Bryan",table:12,checked:false},
+    {id:116,name:"Ngozi Nwoke",table:12,checked:false},
+    {id:117,name:"Uche Ohimai",table:13,checked:false},
+    {id:118,name:"Ronita Singh",table:13,checked:false},
+    {id:119,name:"Olatunde Seun",table:13,checked:false},
+    {id:120,name:"Olatunde Olaitan",table:13,checked:false},
+    {id:121,name:"Adekanmi Adewuyi",table:13,checked:false},
+    {id:122,name:"Mrs Adewuyi",table:13,checked:false},
+    {id:123,name:"Gbenga Oyelowo",table:13,checked:false},
+    {id:124,name:"Mrs Oyelowo",table:13,checked:false},
+    {id:125,name:"Ajidara Ola",table:13,checked:false},
+    {id:126,name:"Bukola Omiyinka",table:13,checked:false},
+    {id:127,name:"Toluwani Adekunle",table:14,checked:false},
+    {id:128,name:"Oluseun Adekunle",table:14,checked:false},
+    {id:129,name:"Ayojesu Odusote",table:14,checked:false},
+    {id:130,name:"Praise Odusote",table:14,checked:false},
+    {id:131,name:"Imisi Olagesin",table:14,checked:false},
+    {id:132,name:"Oluwatobiloba Iroko",table:14,checked:false},
+    {id:133,name:"Prof Collins",table:14,checked:false},
+    {id:134,name:"Kelvin Fonu",table:14,checked:false},
+    {id:135,name:"Hannah Adewumi",table:14,checked:false},
+    {id:136,name:"Onosekoghene Itegboje",table:15,checked:false},
+    {id:137,name:"Amarachi Adewumi",table:15,checked:false},
+    {id:138,name:"Deborah Omolewa",table:15,checked:false},
+    {id:139,name:"Temi Akinroye",table:15,checked:false},
+    {id:140,name:"Mutize Chiedza",table:15,checked:false},
+    {id:141,name:"Bukunmi Ajayi",table:15,checked:false},
+    {id:142,name:"Nnena Achebe",table:15,checked:false},
+    {id:143,name:"Moyo Orekogbe",table:15,checked:false},
+    {id:144,name:"Faith Abimbola",table:15,checked:false},
+    {id:145,name:"Favour Abimbola",table:15,checked:false},
+    {id:146,name:"Oreoluwa Abidogun",table:16,checked:false},
+    {id:147,name:"Nathaniel Oladele",table:16,checked:false},
+    {id:148,name:"Patrobas Adewumi",table:16,checked:false},
+    {id:149,name:"Victor Adewumi",table:16,checked:false},
+    {id:150,name:"Marcus Agbonyeme",table:16,checked:false},
+    {id:151,name:"Feranmi Adekunle",table:16,checked:false},
+    {id:152,name:"Teniola Oke",table:17,checked:false},
+    {id:153,name:"Victor Ugorji",table:17,checked:false},
+    {id:154,name:"Abosede Olabimtan",table:17,checked:false},
+    {id:155,name:"Osaretin Oshodin",table:17,checked:false},
+    {id:156,name:"Tolu Ade",table:17,checked:false},
+    {id:157,name:"Dupe Adedeji",table:17,checked:false},
+    {id:158,name:"Kehinde Olabimtan",table:17,checked:false},
+    {id:159,name:"Bolarinwa Olabimtan",table:17,checked:false},
+    {id:160,name:"Tinuoluwa OIabimtan",table:17,checked:false},
+    {id:161,name:"Ayomiku Oke",table:17,checked:false},
+    {id:162,name:"Walid Basher",table:18,checked:false},
+    {id:163,name:"Jujhar Brar",table:18,checked:false},
+    {id:164,name:"Jimmy Bajulaiye",table:18,checked:false},
+    {id:165,name:"Joshua Ladenegan",table:18,checked:false},
+    {id:166,name:"Simon Foster",table:18,checked:false},
+    {id:167,name:"Esther Nick-Ani",table:18,checked:false},
+    {id:168,name:"Grace Nick-Ani",table:18,checked:false},
+    {id:169,name:"Agrima Sharma",table:18,checked:false},
+    {id:170,name:"Semilore Fademi",table:18,checked:false},
+    {id:171,name:"Ekundayo Fademi",table:18,checked:false},
+    {id:172,name:"Funto Adelaja",table:19,checked:false},
+    {id:173,name:"Chisom Elechi",table:19,checked:false},
+    {id:174,name:"Emmanuel Werimegbe",table:19,checked:false},
+    {id:175,name:"Afantchao David",table:19,checked:false},
+    {id:176,name:"Ogunyemi David",table:19,checked:false},
+    {id:177,name:"Ogunyemi Joy",table:19,checked:false},
+    {id:178,name:"Tolu Abodunwa",table:19,checked:false},
+    {id:179,name:"Tola Ladipo",table:19,checked:false},
+    {id:180,name:"Ijeoma Echezona",table:19,checked:false},
+    {id:181,name:"Okosun Sandra",table:19,checked:false},
+    {id:182,name:"Adeola Makinde",table:20,checked:false},
+    {id:183,name:"Oluremi Makinde",table:20,checked:false},
+    {id:184,name:"Olamide Omisore",table:20,checked:false},
+    {id:185,name:"David Omisore",table:20,checked:false},
+    {id:186,name:"Bayo Adebayo",table:20,checked:false},
+    {id:187,name:"Wumi Adebayo",table:20,checked:false},
+    {id:188,name:"Bukola Olagbaju",table:20,checked:false},
+    {id:189,name:"Ife Olagbaju",table:20,checked:false},
+    {id:190,name:"Omobola Balogun",table:20,checked:false},
+    {id:191,name:"Mrs Selam",table:20,checked:false},
+    {id:192,name:"Kemi Olokunboro",table:21,checked:false},
+    {id:193,name:"Akintayo Olokunboro",table:21,checked:false},
+    {id:194,name:"Taiwo Shobakin",table:21,checked:false},
+    {id:195,name:"Demi Shobakin",table:21,checked:false},
+    {id:196,name:"Oluwakemi Adeyele",table:21,checked:false},
+    {id:197,name:"Foluso Kolawole",table:21,checked:false},
+    {id:198,name:"Francis Utulu",table:21,checked:false},
+    {id:199,name:"Irene Utulu",table:21,checked:false},
+    {id:200,name:"Omonefe Adebayo",table:21,checked:false},
+    {id:201,name:"Ayomide Adebayo",table:21,checked:false},
+    {id:202,name:"Michael Irigo",table:22,checked:false},
+    {id:203,name:"Tolu Irigo",table:22,checked:false},
+    {id:204,name:"Makinde Olojede",table:22,checked:false},
+    {id:205,name:"Biola Olojede",table:22,checked:false},
+    {id:206,name:"Tunji Adebayo",table:22,checked:false},
+    {id:207,name:"Veronica Adebayo",table:22,checked:false},
+    {id:208,name:"Joshua Oluwaleye",table:22,checked:false},
+    {id:209,name:"Funmi Oluwaleye",table:22,checked:false},
+    {id:210,name:"Joan Omije",table:22,checked:false},
+    {id:211,name:"David Omije",table:22,checked:false},
+    {id:212,name:"Chijiole Odeluga",table:23,checked:false},
+    {id:213,name:"Ifey Odeluga",table:23,checked:false},
+    {id:214,name:"Tope Falade",table:23,checked:false},
+    {id:215,name:"Taiye Falade",table:23,checked:false},
+    {id:216,name:"Yewande Oludimu",table:23,checked:false},
+    {id:217,name:"Margaret Iyawe",table:23,checked:false},
+    {id:218,name:"Queensly Okoduwa",table:23,checked:false},
+    {id:219,name:"Peter Awosika",table:23,checked:false},
+    {id:220,name:"Lovelyn-OdehEnyagberue",table:23,checked:false},
+    {id:221,name:"Andrew Enyagberue",table:23,checked:false},
+    {id:222,name:"Rebecca Grey",table:24,checked:false},
+    {id:223,name:"Funmi Temiwo",table:24,checked:false},
+    {id:224,name:"Dotun Temiwo",table:24,checked:false},
+    {id:225,name:"Titilola Otakponmwenhi",table:24,checked:false},
+    {id:226,name:"Rita Erimona",table:24,checked:false},
+    {id:227,name:"Ifeoluwa Joseph",table:24,checked:false},
+    {id:228,name:"Wale Ishola",table:24,checked:false},
+    {id:229,name:"Osayi Ogieve",table:24,checked:false},
+    {id:230,name:"Emilycent Omoregie",table:24,checked:false},
+    {id:231,name:"Raphael Omoregie",table:24,checked:false},
+    {id:232,name:"Yewande Ojo",table:25,checked:false},
+    {id:233,name:"Tosin Ojo",table:25,checked:false},
+    {id:234,name:"Samuel Oluleke",table:25,checked:false},
+    {id:235,name:"Rashell Oluleke",table:25,checked:false},
+    {id:236,name:"Chris Egbara",table:25,checked:false},
+    {id:237,name:"Blessing Egbara",table:25,checked:false},
+    {id:238,name:"Ehis Ogbeide",table:25,checked:false},
+    {id:239,name:"Joyce Ogbeide",table:25,checked:false},
+    {id:240,name:"Olumide Ajayi",table:25,checked:false},
+    {id:241,name:"Ope Ajayi",table:25,checked:false},
+    {id:242,name:"Gordon Power",table:26,checked:false},
+    {id:243,name:"Victoria Hyacintho",table:26,checked:false},
+    {id:244,name:"Beatrice Tankam",table:26,checked:false},
+    {id:245,name:"Linda Filichupk",table:26,checked:false},
+    {id:246,name:"Delanie Johnson",table:26,checked:false},
+    {id:247,name:"Nicole Andrew",table:26,checked:false},
+    {id:248,name:"Fitz Sherman",table:26,checked:false},
+    {id:249,name:"Alyssa Prouty",table:26,checked:false},
+    {id:250,name:"Ira St. Jean",table:26,checked:false},
+    {id:251,name:"Aakriti St. Jean",table:26,checked:false},
+  ];
+
+  // ── Expose Firebase ops to global scope ───────────────────────────────
+  const guestsRef = ref(db, 'guests');
+
+  window._fb = { db, ref, set, onValue, update, remove, get, guestsRef };
+
+  // ── Seed DB if empty, then start app ─────────────────────────────────
+  get(guestsRef).then(snap => {
+    if (!snap.exists()) {
+      // First run: seed all guests
+      const data = {};
+      INITIAL_GUESTS.forEach(g => { data[g.id] = g; });
+      set(guestsRef, data).then(() => startApp());
+    } else {
+      startApp();
+    }
+  }).catch(err => {
+    console.error('Firebase error:', err);
+    document.getElementById('fb-error').style.display = 'flex';
+  });
+
+  // ── Real-time listener: update UI on any change ───────────────────────
+  onValue(guestsRef, snap => {
+    if (!snap.exists()) return;
+    const data = snap.val();
+    window._guests = Object.values(data).sort((a,b) => a.id - b.id);
+    window._nextId = Math.max(...window._guests.map(g => g.id)) + 1;
+    if (window._appReady) refreshAll();
+  });
+</script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+:root {
+  --gold:#C9A84C; --dark-gold:#8B6914; --deep-green:#004D00;
+  --sage:#4A6741; --sage-light:#EAF4EA; --cream:#FFFDF0;
+  --charcoal:#1E1E1E; --mid-gray:#777; --light-gray:#F0F0F0;
+  --white:#fff; --checked:#22c55e; --red:#ef4444;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--charcoal);min-height:100vh;}
+
+/* ── Screens ── */
+.screen{display:none;min-height:100vh;}
+.screen.active{display:flex;flex-direction:column;}
+
+/* ── Sync indicator ── */
+#sync-bar{
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  padding:0.4rem 1rem;font-size:0.78rem;font-weight:600;
+  text-align:center;transition:all 0.3s;display:none;
+}
+#sync-bar.syncing{display:block;background:#fef9c3;color:#854d0e;}
+#sync-bar.synced {display:block;background:#dcfce7;color:#166534;animation:fadeBar 2s forwards;}
+#sync-bar.error  {display:block;background:#fee2e2;color:#991b1b;}
+@keyframes fadeBar{0%{opacity:1}70%{opacity:1}100%{opacity:0;display:none}}
+
+/* ── Firebase error screen ── */
+#fb-error{
+  display:none;position:fixed;inset:0;background:#1a1a1a;
+  z-index:10000;flex-direction:column;align-items:center;
+  justify-content:center;padding:2rem;text-align:center;color:white;
+}
+#fb-error h2{font-family:'Cormorant Garamond',serif;font-size:1.8rem;color:#fca5a5;margin-bottom:1rem;}
+#fb-error p{color:#d1d5db;font-size:0.9rem;line-height:1.6;max-width:500px;}
+#fb-error code{background:#374151;padding:0.2rem 0.5rem;border-radius:4px;font-size:0.8rem;}
+
+/* ── Loading screen ── */
+#screen-loading{
+  background:linear-gradient(135deg,#004D00,#1a5c1a);
+  align-items:center;justify-content:center;
+}
+.loader-box{text-align:center;color:white;}
+.loader-title{font-family:'Cormorant Garamond',serif;font-size:2rem;margin-bottom:0.5rem;}
+.loader-sub{color:rgba(255,255,255,0.6);font-size:0.85rem;margin-bottom:2rem;}
+.spinner{width:40px;height:40px;border:3px solid rgba(255,255,255,0.2);
+  border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.connecting-dots::after{content:'...';animation:dots 1.5s infinite;}
+@keyframes dots{0%{content:'.'}33%{content:'..'}66%{content:'...'}}
+
+/* ── Landing ── */
+#screen-landing{
+  background:linear-gradient(135deg,#004D00 0%,#1a5c1a 40%,#2d7a2d 100%);
+  align-items:center;justify-content:center;padding:2rem;
+}
+#screen-landing::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.landing-card{
+  background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);
+  border:1px solid rgba(201,168,76,0.35);border-radius:24px;
+  padding:3rem 2.5rem;text-align:center;max-width:420px;width:100%;
+  position:relative;animation:slideUp 0.5s ease;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.lc-orn{font-family:'Cormorant Garamond',serif;font-size:1rem;color:var(--gold);
+  letter-spacing:0.3em;text-transform:uppercase;margin-bottom:0.5rem;}
+.lc-name{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:600;
+  color:white;line-height:1.05;}
+.lc-amp{font-style:italic;color:var(--gold);}
+.lc-date{font-size:0.82rem;color:rgba(255,255,255,0.55);letter-spacing:0.1em;
+  margin:1rem 0 2rem;font-weight:300;}
+.lc-div{width:60px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);
+  margin:0 auto 1.8rem;}
+.live-badge{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.4);
+  border-radius:20px;padding:0.25rem 0.8rem;font-size:0.72rem;
+  color:#86efac;margin-bottom:1.5rem;
+}
+.live-dot{width:7px;height:7px;background:#22c55e;border-radius:50%;
+  animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Buttons */
+.btn{display:block;width:100%;padding:0.9rem 1.5rem;border:none;border-radius:12px;
+  font-family:'DM Sans',sans-serif;font-size:0.95rem;font-weight:500;
+  cursor:pointer;transition:all 0.2s;text-align:center;}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--dark-gold));color:white;margin-bottom:0.8rem;}
+.btn-gold:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(201,168,76,0.4);}
+.btn-outline{background:transparent;border:1.5px solid rgba(255,255,255,0.3);color:white;margin-bottom:0.8rem;}
+.btn-outline:hover{background:rgba(255,255,255,0.1);}
+.btn-green{background:linear-gradient(135deg,var(--sage),var(--deep-green));color:white;}
+.btn-green:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(74,103,65,0.4);}
+.btn-sm{display:inline-block;width:auto;padding:0.45rem 0.9rem;
+  font-size:0.78rem;border-radius:8px;}
+.btn-danger{background:var(--red);color:white;}
+.btn-danger:hover{background:#dc2626;}
+.btn-undo{background:#fef2f2;color:#dc2626;}
+
+/* ── PIN Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.55);
+  z-index:500;align-items:center;justify-content:center;padding:1rem;}
+.modal-overlay.show{display:flex;animation:fadeIn 0.2s;}
+@keyframes fadeIn{from{opacity:0;transform:scale(0.97)}to{opacity:1;transform:scale(1)}}
+.modal{background:white;border-radius:20px;padding:1.5rem;
+  max-width:420px;width:100%;max-height:85vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(0,0,0,0.25);}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;}
+.modal-title{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--deep-green);}
+.modal-close{background:none;border:none;font-size:1.3rem;cursor:pointer;
+  color:var(--mid-gray);width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:#f0f0f0;}
+.form-group{margin-bottom:1rem;}
+.form-group label{display:block;font-size:0.8rem;font-weight:600;
+  color:var(--mid-gray);margin-bottom:0.35rem;text-transform:uppercase;letter-spacing:0.05em;}
+.form-group input,.form-group select{width:100%;padding:0.7rem 1rem;
+  border:1.5px solid #ddd;border-radius:10px;font-family:'DM Sans',sans-serif;
+  font-size:0.9rem;outline:none;transition:border-color 0.2s;}
+.form-group input:focus,.form-group select:focus{border-color:var(--gold);}
+
+/* ── Guest Screen ── */
+#screen-guest{
+  background:linear-gradient(160deg,#fffdf0 0%,#eaf4ea 100%);
+  align-items:center;padding:1.5rem 1rem;
+}
+.g-header{text-align:center;padding:1.5rem 1rem 0.5rem;width:100%;max-width:500px;margin:0 auto;}
+.g-header h1{font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;color:var(--deep-green);}
+.g-header p{color:var(--mid-gray);font-size:0.88rem;margin-top:0.3rem;}
+.search-wrap{width:100%;max-width:500px;margin:1rem auto;position:relative;}
+.search-wrap input{width:100%;padding:1rem 1rem 1rem 3rem;border:2px solid #ddd;
+  border-radius:16px;font-size:1.05rem;font-family:'DM Sans',sans-serif;
+  background:white;transition:border-color 0.2s;outline:none;}
+.search-wrap input:focus{border-color:var(--gold);}
+.search-icon{position:absolute;left:1rem;top:50%;transform:translateY(-50%);font-size:1.1rem;}
+.results{width:100%;max-width:500px;margin:0 auto;}
+.r-card{background:white;border-radius:14px;padding:1rem 1.2rem;
+  margin-bottom:0.6rem;display:flex;align-items:center;justify-content:space-between;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1.5px solid transparent;transition:all 0.2s;}
+.r-card:hover{border-color:var(--gold);transform:translateX(3px);}
+.r-card.is-checked{background:#f0fdf4;border-color:var(--checked);}
+.r-info h3{font-size:0.98rem;font-weight:600;}
+.r-info p{font-size:0.78rem;color:var(--mid-gray);margin-top:2px;}
+.badge{padding:0.3rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:600;white-space:nowrap;}
+.badge-in{background:#dcfce7;color:#166534;}
+.badge-wait{background:#fef9c3;color:#854d0e;}
+.ci-btn{padding:0.5rem 1.1rem;background:linear-gradient(135deg,var(--sage),var(--deep-green));
+  color:white;border:none;border-radius:10px;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;}
+.ci-btn:hover{transform:scale(1.05);}
+.empty-state{text-align:center;padding:2rem;color:var(--mid-gray);font-style:italic;}
+
+/* ── Success overlay ── */
+.success-ov{display:none;position:fixed;inset:0;background:rgba(0,77,0,0.93);
+  z-index:1000;align-items:center;justify-content:center;flex-direction:column;
+  padding:2rem;text-align:center;}
+.success-ov.show{display:flex;animation:fadeIn 0.3s;}
+.s-icon{font-size:5rem;margin-bottom:1rem;}
+.s-name{font-family:'Cormorant Garamond',serif;font-size:2.3rem;color:white;font-weight:600;}
+.s-table{color:var(--gold);font-size:1.2rem;margin:0.5rem 0 1.5rem;}
+.s-close{padding:0.8rem 2.5rem;background:var(--gold);color:white;border:none;
+  border-radius:12px;font-size:1rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+/* ── Usher Dashboard ── */
+#screen-usher{background:#f8f9fa;flex-direction:column;}
+.u-header{background:linear-gradient(135deg,var(--deep-green),var(--sage));
+  padding:1rem 1.5rem;display:flex;align-items:center;
+  justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}
+.u-header h2{font-family:'Cormorant Garamond',serif;color:white;font-size:1.4rem;}
+.u-header p{color:rgba(255,255,255,0.65);font-size:0.78rem;}
+.stats-bar{display:flex;gap:0.7rem;flex-wrap:wrap;}
+.stat-pill{background:rgba(255,255,255,0.15);border-radius:20px;
+  padding:0.3rem 0.8rem;font-size:0.8rem;color:white;font-weight:500;}
+.stat-pill span{font-weight:700;color:var(--gold);}
+.back-btn{background:none;border:none;color:rgba(255,255,255,0.75);cursor:pointer;
+  font-size:0.85rem;padding:0.3rem 0.7rem;border-radius:8px;font-family:'DM Sans',sans-serif;}
+.back-btn:hover{background:rgba(255,255,255,0.15);}
+
+/* Tabs */
+.tabs{display:flex;background:white;border-bottom:2px solid #eee;overflow-x:auto;flex-shrink:0;}
+.tab-btn{padding:0.8rem 1.2rem;border:none;background:none;
+  font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:500;
+  color:var(--mid-gray);cursor:pointer;white-space:nowrap;
+  border-bottom:3px solid transparent;transition:all 0.2s;}
+.tab-btn.active{color:var(--deep-green);border-bottom-color:var(--gold);font-weight:600;}
+.tab-btn:hover:not(.active){color:var(--charcoal);}
+.tab-pane{display:none;flex:1;overflow-y:auto;padding:1.2rem;}
+.tab-pane.active{display:block;}
+
+/* Guest List */
+.search-bar{display:flex;gap:0.6rem;margin-bottom:1rem;flex-wrap:wrap;}
+.search-bar input{flex:1;min-width:180px;padding:0.7rem 1rem;
+  border:1.5px solid #ddd;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:0.9rem;outline:none;}
+.search-bar input:focus{border-color:var(--gold);}
+.filter-sel{padding:0.7rem 1rem;border:1.5px solid #ddd;border-radius:10px;
+  font-family:'DM Sans',sans-serif;font-size:0.85rem;background:white;outline:none;cursor:pointer;}
+.filter-sel:focus{border-color:var(--gold);}
+.guest-tbl{background:white;border-radius:14px;overflow:hidden;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);}
+.tbl-hdr{display:grid;grid-template-columns:2fr 0.7fr 0.9fr 1.1fr;
+  padding:0.7rem 1rem;background:var(--deep-green);color:white;
+  font-size:0.78rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;}
+.g-row{display:grid;grid-template-columns:2fr 0.7fr 0.9fr 1.1fr;
+  padding:0.65rem 1rem;border-bottom:1px solid #f0f0f0;
+  align-items:center;transition:background 0.15s;}
+.g-row:last-child{border-bottom:none;}
+.g-row:hover{background:#fafafa;}
+.g-row.is-in{background:#f0fdf4;}
+.g-name{font-weight:500;font-size:0.87rem;}
+.g-tbl{font-size:0.8rem;color:var(--mid-gray);}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;}
+.dot-g{background:var(--checked);}
+.dot-w{background:#ccc;}
+.acts{display:flex;gap:0.35rem;flex-wrap:wrap;}
+
+/* Floor Plan */
+.floor-wrap{background:#f0ebe0;border-radius:16px;padding:1.2rem;overflow-x:auto;}
+.floor-grid{display:grid;grid-template-columns:1fr 100px 1fr;gap:10px;min-width:580px;}
+.floor-side{display:flex;flex-direction:column;gap:10px;}
+.floor-row{display:flex;gap:10px;justify-content:center;}
+.aisle{background:linear-gradient(180deg,#e8dfc8,#d4c9a8);border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:0.8rem 0.4rem;border:1px solid #c4b898;}
+.aisle-stage{background:#b8a882;color:#5c4a1e;border-radius:5px;padding:0.25rem 0.4rem;
+  font-size:0.55rem;font-weight:700;text-align:center;text-transform:uppercase;
+  letter-spacing:0.05em;width:100%;}
+.dance-floor{background:#d4c090;border:2px dashed #a8904c;border-radius:7px;
+  padding:0.4rem;text-align:center;font-size:0.6rem;font-weight:700;color:#6b4e1e;}
+.aisle-lbl{font-size:0.55rem;letter-spacing:0.12em;color:#8a7a5a;font-weight:600;text-transform:uppercase;}
+.f-table{width:68px;height:68px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#d4e8d4,#a8c8a8);
+  border:3px solid #4A6741;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;cursor:pointer;
+  transition:all 0.2s;box-shadow:2px 2px 8px rgba(0,0,0,0.15);flex-shrink:0;}
+.f-table:hover{transform:scale(1.14);box-shadow:0 6px 20px rgba(74,103,65,0.4);border-color:var(--gold);}
+.f-table.all-in{background:radial-gradient(circle at 35% 35%,#dcfce7,#86efac);border-color:var(--checked);}
+.f-table.part-in{background:radial-gradient(circle at 35% 35%,#fef9c3,#fde68a);border-color:var(--gold);}
+.f-tnum{font-weight:700;font-size:0.7rem;color:var(--deep-green);}
+.f-cnt{font-size:0.56rem;color:var(--sage);}
+
+/* Table Modal */
+.m-guest{display:flex;align-items:center;justify-content:space-between;
+  padding:0.6rem 0.8rem;border-radius:10px;margin-bottom:0.4rem;
+  border:1px solid #eee;transition:all 0.2s;}
+.m-guest.is-in{background:#f0fdf4;border-color:#86efac;}
+.m-gname{font-size:0.9rem;font-weight:500;}
+.m-cbtn{padding:0.3rem 0.8rem;border:none;border-radius:8px;font-size:0.78rem;font-weight:600;cursor:pointer;transition:all 0.15s;}
+.m-cbtn.pend{background:var(--sage-light);color:var(--sage);}
+.m-cbtn.pend:hover{background:var(--sage);color:white;}
+.m-cbtn.done{background:#dcfce7;color:#166534;cursor:default;}
+
+/* Add Guest */
+.add-form{background:white;border-radius:14px;padding:1.5rem;
+  box-shadow:0 2px 12px rgba(0,0,0,0.06);max-width:500px;}
+.add-form h3{font-family:'Cormorant Garamond',serif;font-size:1.4rem;
+  color:var(--deep-green);margin-bottom:1rem;}
+
+/* QR */
+.qr-wrap{display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;}
+.qr-box{background:white;border-radius:20px;padding:2rem;text-align:center;
+  box-shadow:0 4px 20px rgba(0,0,0,0.1);max-width:340px;width:100%;}
+.qr-box h3{font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--deep-green);margin-bottom:0.3rem;}
+.qr-box p{font-size:0.82rem;color:var(--mid-gray);margin-bottom:1.2rem;}
+#qr-code{margin:0 auto 1rem;display:flex;justify-content:center;}
+.qr-url{font-size:0.7rem;color:var(--mid-gray);word-break:break-all;margin-top:0.5rem;
+  padding:0.5rem;background:#f5f5f5;border-radius:8px;}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.stat-card{background:white;border-radius:14px;padding:1.2rem;text-align:center;
+  box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+.stat-num{font-family:'Cormorant Garamond',serif;font-size:2.5rem;font-weight:700;
+  color:var(--deep-green);line-height:1;}
+.stat-lbl{font-size:0.78rem;color:var(--mid-gray);margin-top:0.3rem;}
+.prog-section{background:white;border-radius:14px;padding:1.2rem;
+  box-shadow:0 2px 10px rgba(0,0,0,0.06);}
+.prog-section h3{font-size:0.88rem;font-weight:600;color:var(--charcoal);
+  margin-bottom:1rem;text-transform:uppercase;letter-spacing:0.05em;}
+.prog-row{display:flex;align-items:center;gap:0.7rem;margin-bottom:0.55rem;}
+.prog-lbl{font-size:0.75rem;width:52px;color:var(--mid-gray);}
+.prog-bg{flex:1;height:8px;background:#eee;border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;border-radius:4px;
+  background:linear-gradient(90deg,var(--sage),var(--deep-green));transition:width 0.5s;}
+.prog-cnt{font-size:0.73rem;color:var(--mid-gray);width:38px;text-align:right;}
+
+@media(max-width:500px){
+  .tbl-hdr,.g-row{grid-template-columns:2fr 0.6fr 0.8fr;}
+  .tbl-hdr .col-act,.g-row .col-act{display:none;}
+  .f-table{width:58px;height:68px;}
+}
+</style>
+</head>
+<body>
+
+<!-- Firebase config error screen -->
+<div id="fb-error">
+  <h2>⚠️ Firebase Not Configured</h2>
+  <p>To enable real-time sync across all devices, you need to add your Firebase config.<br><br>
+  Open this HTML file in a text editor, find the <code>firebaseConfig</code> block near the top, and replace the placeholder values with your actual Firebase project credentials.<br><br>
+  Get your config from: <strong>firebase.google.com → Your Project → Project Settings → Your Apps → Web</strong></p>
+</div>
+
+<!-- Sync indicator -->
+<div id="sync-bar"></div>
+
+<!-- ══ LOADING ══════════════════════════════════════ -->
+<div id="screen-loading" class="screen active">
+  <div class="loader-box">
+    <div class="loader-title">Ayomide <span style="font-style:italic;color:var(--gold)">&amp;</span> Oyiza</div>
+    <div class="loader-sub">Connecting to live database<span class="connecting-dots"></span></div>
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<!-- ══ LANDING ══════════════════════════════════════ -->
+<div id="screen-landing" class="screen">
+  <div class="landing-card">
+    <div class="lc-orn">✦ Wedding Check-In ✦</div>
+    <div class="lc-name">Ayomide</div>
+    <div class="lc-name"><span class="lc-amp">&amp;</span></div>
+    <div class="lc-name">Oyiza</div>
+    <div class="lc-date">SATURDAY · APRIL 11, 2026 · SLOVENIAN HALL, EDMONTON</div>
+    <div class="lc-div"></div>
+    <div class="live-badge">
+      <span class="live-dot"></span> Live &amp; Synced Across All Devices
+    </div>
+    <button class="btn btn-gold" onclick="show('guest')">🎉 Check In as Guest</button>
+    <button class="btn btn-outline" onclick="showPinModal()">🔐 Usher / Staff Login</button>
+    <div style="font-size:0.72rem;color:rgba(255,255,255,0.35);margin-top:1rem;">
+      Scan the QR code at the entrance or tap above
+    </div>
+  </div>
+</div>
+
+<!-- PIN Modal -->
+<div class="modal-overlay" id="pin-modal">
+  <div class="modal" style="max-width:320px;">
+    <div class="modal-hdr">
+      <span class="modal-title">Staff Access</span>
+      <button class="modal-close" onclick="closePinModal()">✕</button>
+    </div>
+    <p style="font-size:0.85rem;color:var(--mid-gray);margin-bottom:1rem;">Enter usher PIN to access the dashboard</p>
+    <div class="form-group">
+      <input type="password" id="pin-input" placeholder="PIN (default: 1234)"
+        maxlength="6" style="font-size:1.1rem;letter-spacing:0.3em;text-align:center;"
+        onkeydown="if(event.key==='Enter')checkPin()">
+    </div>
+    <button class="btn btn-green" onclick="checkPin()">Enter Dashboard</button>
+    <p id="pin-err" style="color:var(--red);font-size:0.8rem;margin-top:0.5rem;text-align:center;display:none;">
+      Incorrect PIN. Try again.
+    </p>
+  </div>
+</div>
+
+<!-- ══ GUEST SELF CHECK-IN ══════════════════════════ -->
+<div id="screen-guest" class="screen">
+  <div class="g-header">
+    <div style="font-size:0.75rem;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;">Welcome to</div>
+    <h1>Ayomide <span style="font-style:italic;color:var(--gold)">&amp;</span> Oyiza</h1>
+    <p>Search your name below to check in 💐</p>
+    <button onclick="show('landing')" style="margin-top:0.5rem;background:none;border:1px solid #ddd;
+      border-radius:20px;padding:0.3rem 0.8rem;font-size:0.75rem;cursor:pointer;color:var(--mid-gray);">← Back</button>
+  </div>
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="g-search" placeholder="Type your first or last name…"
+      oninput="guestSearch(this.value)" autocomplete="off" autocorrect="off">
+  </div>
+  <div class="results" id="g-results">
+    <div class="empty-state">Start typing your name to find yourself on the list</div>
+  </div>
+</div>
+
+<!-- Success overlay -->
+<div class="success-ov" id="success-ov">
+  <div class="s-icon">🎊</div>
+  <div class="s-name" id="s-name">Welcome!</div>
+  <div class="s-table" id="s-table">Table —</div>
+  <div style="color:rgba(255,255,255,0.7);font-size:0.9rem;margin-bottom:1.5rem;">
+    You're checked in! Enjoy the celebration 🥂
+  </div>
+  <button class="s-close" onclick="closeSuccess()">Thank you! ✨</button>
+</div>
+
+<!-- ══ USHER DASHBOARD ══════════════════════════════ -->
+<div id="screen-usher" class="screen">
+  <div class="u-header">
+    <div>
+      <h2>Usher Dashboard</h2>
+      <p>Ayomide &amp; Oyiza · April 11, 2026 · <span style="color:#86efac;">● Live Sync Active</span></p>
+    </div>
+    <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+      <div class="stats-bar">
+        <div class="stat-pill">In: <span id="hdr-in">0</span></div>
+        <div class="stat-pill">Total: <span id="hdr-tot">0</span></div>
+        <div class="stat-pill">Pending: <span id="hdr-pend">0</span></div>
+      </div>
+      <button class="back-btn" onclick="show('landing')">← Exit</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('guests')">👥 Guests</button>
+    <button class="tab-btn" onclick="switchTab('floor')">🗺️ Floor Plan</button>
+    <button class="tab-btn" onclick="switchTab('add')">➕ Add Guest</button>
+    <button class="tab-btn" onclick="switchTab('qr')">📱 QR Code</button>
+    <button class="tab-btn" onclick="switchTab('stats')">📊 Stats</button>
+  </div>
+
+  <!-- Guests tab -->
+  <div class="tab-pane active" id="tab-guests">
+    <div class="search-bar">
+      <input type="text" id="u-search" placeholder="Search by name…" oninput="renderList()">
+      <select class="filter-sel" id="f-status" onchange="renderList()">
+        <option value="all">All Guests</option>
+        <option value="pending">Not Checked In</option>
+        <option value="checked">Checked In</option>
+      </select>
+      <select class="filter-sel" id="f-table" onchange="renderList()">
+        <option value="all">All Tables</option>
+      </select>
+    </div>
+    <div class="guest-tbl">
+      <div class="tbl-hdr">
+        <div>Guest Name</div><div>Table</div><div>Status</div>
+        <div class="col-act">Actions</div>
+      </div>
+      <div id="u-list"></div>
+    </div>
+  </div>
+
+  <!-- Floor plan tab -->
+  <div class="tab-pane" id="tab-floor">
+    <p style="font-size:0.82rem;color:var(--mid-gray);margin-bottom:1rem;">
+      Tap any table to view &amp; check in guests. Updates are live across all devices.<br>
+      <span style="color:var(--checked)">●</span> All checked &nbsp;
+      <span style="color:var(--gold)">●</span> Partial &nbsp;
+      <span style="color:#aaa">●</span> None checked
+    </p>
+    <div class="floor-wrap">
+      <div class="floor-grid" id="floor-grid"></div>
+    </div>
+  </div>
+
+  <!-- Add guest tab -->
+  <div class="tab-pane" id="tab-add">
+    <div class="add-form">
+      <h3>Add New Guest</h3>
+      <div class="form-group">
+        <label>Full Name *</label>
+        <input type="text" id="new-name" placeholder="e.g. Amaka Johnson">
+      </div>
+      <div class="form-group">
+        <label>Assign to Table *</label>
+        <select id="new-table"></select>
+      </div>
+      <button class="btn btn-green" onclick="addGuest()">Add to Guest List</button>
+      <div id="add-msg" style="margin-top:0.8rem;font-size:0.85rem;"></div>
+    </div>
+  </div>
+
+  <!-- QR tab -->
+  <div class="tab-pane" id="tab-qr">
+    <div class="qr-wrap">
+      <div class="qr-box">
+        <h3>Guest Self Check-In</h3>
+        <p>Display this QR at the entrance — guests scan to check in themselves</p>
+        <div id="qr-code"></div>
+        <div class="qr-url" id="qr-url"></div>
+        <button class="btn btn-green" style="margin-top:1rem;" onclick="printQR()">🖨️ Print QR Code</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats tab -->
+  <div class="tab-pane" id="tab-stats">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num" id="s-total">0</div><div class="stat-lbl">Total Guests</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-in" style="color:var(--checked)">0</div><div class="stat-lbl">Checked In</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-pend" style="color:var(--gold)">0</div><div class="stat-lbl">Still Awaited</div></div>
+      <div class="stat-card"><div class="stat-num" id="s-pct" style="color:var(--sage)">0%</div><div class="stat-lbl">Attendance</div></div>
+    </div>
+    <div class="prog-section">
+      <h3>Table Progress</h3>
+      <div id="prog-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Table modal -->
+<div class="modal-overlay" id="tbl-modal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <span class="modal-title" id="tbl-modal-title">Table</span>
+      <button class="modal-close" onclick="closeTblModal()">✕</button>
+    </div>
+    <div id="tbl-modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════
+// APP STATE & HELPERS
+// ══════════════════════════════════════════════════
+const PIN = '1234';
+window._guests = [];
+window._nextId = 252;
+window._appReady = false;
+
+const LEFT_ROWS  = [[1,2,3],[4,5,6,7],[8,9,10],[11,12,13]];
+const RIGHT_ROWS = [[14,15,16],[17,18,19,20],[21,22,23],[24,25,26]];
+
+function showSync(state, msg) {
+  const bar = document.getElementById('sync-bar');
+  bar.className = 'syncing';
+  bar.textContent = msg || '🔄 Syncing…';
+  if(state === 'done') {
+    setTimeout(() => { bar.className = 'synced'; bar.textContent = '✓ Synced'; }, 400);
+  } else if(state === 'error') {
+    bar.className = 'error'; bar.textContent = '⚠️ Sync error — check connection';
+  }
+}
+
+function show(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if(id === 'usher') initDashboard();
+}
+
+function startApp() {
+  show('landing');
+  window._appReady = true;
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('mode') === 'guest') show('guest');
+}
+
+function refreshAll() {
+  const cur = document.querySelector('.screen.active');
+  if(!cur || cur.id !== 'screen-usher') return;
+  renderList();
+  renderFloor();
+  renderStats();
+  updateHdr();
+}
+
+// ══════════════════════════════════════════════════
+// PIN
+// ══════════════════════════════════════════════════
+function showPinModal() {
+  document.getElementById('pin-modal').classList.add('show');
+  setTimeout(() => document.getElementById('pin-input').focus(), 100);
+}
+function closePinModal() {
+  document.getElementById('pin-modal').classList.remove('show');
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-err').style.display = 'none';
+}
+function checkPin() {
+  if(document.getElementById('pin-input').value === PIN) {
+    closePinModal(); show('usher');
+  } else {
+    document.getElementById('pin-err').style.display = 'block';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+  }
+}
+
+// ══════════════════════════════════════════════════
+// FIREBASE WRITE HELPERS
+// ══════════════════════════════════════════════════
+async function fbUpdate(id, data) {
+  showSync('saving', '🔄 Saving…');
+  try {
+    const r = window._fb.ref(window._fb.db, `guests/${id}`);
+    await window._fb.update(r, data);
+    showSync('done');
+  } catch(e) { showSync('error'); }
+}
+async function fbAdd(guest) {
+  showSync('saving', '🔄 Adding guest…');
+  try {
+    const r = window._fb.ref(window._fb.db, `guests/${guest.id}`);
+    await window._fb.set(r, guest);
+    showSync('done');
+  } catch(e) { showSync('error'); }
+}
+async function fbRemove(id) {
+  showSync('saving', '🔄 Removing…');
+  try {
+    const r = window._fb.ref(window._fb.db, `guests/${id}`);
+    await window._fb.remove(r);
+    showSync('done');
+  } catch(e) { showSync('error'); }
+}
+
+// ══════════════════════════════════════════════════
+// GUEST SELF CHECK-IN
+// ══════════════════════════════════════════════════
+function guestSearch(q) {
+  const el = document.getElementById('g-results');
+  if(!q || q.length < 2) {
+    el.innerHTML = '<div class="empty-state">Start typing your name to find yourself on the list</div>';
+    return;
+  }
+  const lo = q.toLowerCase();
+  const found = _guests.filter(g => g.name.toLowerCase().includes(lo));
+  if(!found.length) {
+    el.innerHTML = `<div class="empty-state">No guest found for "${q}"<br><small>Please see an usher for help</small></div>`;
+    return;
+  }
+  el.innerHTML = found.map(g => `
+    <div class="r-card ${g.checked?'is-checked':''}" id="rc-${g.id}">
+      <div class="r-info">
+        <h3>${g.name}</h3><p>Table ${g.table}</p>
+      </div>
+      ${g.checked
+        ? '<span class="badge badge-in">✓ Checked In</span>'
+        : `<button class="ci-btn" onclick="selfCI(${g.id})">Check In</button>`}
+    </div>`).join('');
+}
+
+async function selfCI(id) {
+  const g = _guests.find(x=>x.id===id);
+  if(!g||g.checked) return;
+  await fbUpdate(id, {checked: true});
+  // Show success (Firebase listener will update the card)
+  document.getElementById('s-name').textContent = 'Welcome, ' + g.name.split(' ')[0] + '!';
+  document.getElementById('s-table').textContent = 'You are seated at Table ' + g.table;
+  document.getElementById('success-ov').classList.add('show');
+}
+function closeSuccess() { document.getElementById('success-ov').classList.remove('show'); }
+
+// ══════════════════════════════════════════════════
+// USHER DASHBOARD INIT
+// ══════════════════════════════════════════════════
+function initDashboard() {
+  buildSelects();
+  renderList();
+  renderFloor();
+  renderStats();
+  updateHdr();
+  generateQR();
+}
+
+function updateHdr() {
+  const inn = _guests.filter(g=>g.checked).length;
+  const tot = _guests.length;
+  document.getElementById('hdr-in').textContent   = inn;
+  document.getElementById('hdr-tot').textContent  = tot;
+  document.getElementById('hdr-pend').textContent = tot - inn;
+}
+
+function buildSelects() {
+  const ft = document.getElementById('f-table');
+  ft.innerHTML = '<option value="all">All Tables</option>';
+  for(let t=1;t<=26;t++) ft.innerHTML += `<option value="${t}">Table ${t}</option>`;
+
+  const nt = document.getElementById('new-table');
+  nt.innerHTML = '';
+  for(let t=1;t<=26;t++) nt.innerHTML += `<option value="${t}">Table ${t}</option>`;
+}
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['guests','floor','add','qr','stats'][i] === name);
+  });
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='stats') renderStats();
+  if(name==='floor') renderFloor();
+}
+
+// ══════════════════════════════════════════════════
+// GUEST LIST
+// ══════════════════════════════════════════════════
+function renderList() {
+  const q  = (document.getElementById('u-search')||{}).value?.toLowerCase()||'';
+  const st = (document.getElementById('f-status')||{}).value||'all';
+  const tb = (document.getElementById('f-table')||{}).value||'all';
+
+  const list = _guests.filter(g => {
+    const mq = !q || g.name.toLowerCase().includes(q);
+    const ms = st==='all' || (st==='checked'?g.checked:!g.checked);
+    const mt = tb==='all' || g.table==tb;
+    return mq&&ms&&mt;
+  });
+
+  const el = document.getElementById('u-list');
+  if(!list.length){el.innerHTML='<div class="empty-state">No guests found</div>';return;}
+  el.innerHTML = list.map(g=>`
+    <div class="g-row ${g.checked?'is-in':''}">
+      <div class="g-name">${g.name}</div>
+      <div class="g-tbl">T${g.table}</div>
+      <div>
+        <span class="dot ${g.checked?'dot-g':'dot-w'}"></span>
+        <span style="font-size:0.8rem;color:${g.checked?'#166534':'var(--mid-gray)'}">
+          ${g.checked?'Checked In':'Pending'}
+        </span>
+      </div>
+      <div class="acts col-act">
+        ${g.checked
+          ? `<button class="btn btn-sm btn-undo" onclick="undo(${g.id})">Undo</button>`
+          : `<button class="btn btn-sm btn-green" onclick="usherCI(${g.id})">Check In</button>`
+        }
+        <button class="btn btn-sm btn-danger" onclick="removeG(${g.id})">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+async function usherCI(id) { await fbUpdate(id, {checked:true}); }
+async function undo(id)    { await fbUpdate(id, {checked:false}); }
+async function removeG(id) {
+  if(!confirm('Remove this guest from the list?')) return;
+  await fbRemove(id);
+}
+
+// ══════════════════════════════════════════════════
+// ADD GUEST
+// ══════════════════════════════════════════════════
+async function addGuest() {
+  const name  = document.getElementById('new-name').value.trim();
+  const table = parseInt(document.getElementById('new-table').value);
+  const msg   = document.getElementById('add-msg');
+  if(!name){msg.innerHTML='<span style="color:var(--red)">Please enter a name.</span>';return;}
+  const newG = {id: window._nextId++, name, table, checked:false};
+  await fbAdd(newG);
+  document.getElementById('new-name').value = '';
+  msg.innerHTML = `<span style="color:var(--checked)">✓ ${name} added to Table ${table}!</span>`;
+  setTimeout(()=>msg.innerHTML='',3000);
+}
+
+// ══════════════════════════════════════════════════
+// FLOOR PLAN
+// ══════════════════════════════════════════════════
+function renderFloor() {
+  const grid = document.getElementById('floor-grid');
+  if(!grid) return;
+
+  const makeRow = nums => `<div class="floor-row">${nums.map(n=>{
+    const tg = _guests.filter(g=>g.table===n);
+    const ch = tg.filter(g=>g.checked).length;
+    const tot= tg.length;
+    const cls= ch===tot&&tot>0?'all-in':ch>0?'part-in':'';
+    return `<div class="f-table ${cls}" onclick="openTbl(${n})" title="Table ${n} — ${ch}/${tot} checked in">
+      <div class="f-tnum">T${n}</div>
+      <div class="f-cnt">${ch}/${tot}</div>
+    </div>`;
+  }).join('')}</div>`;
+
+  grid.innerHTML = `
+    <div class="floor-side">${LEFT_ROWS.map(makeRow).join('')}</div>
+    <div class="aisle">
+      <div class="aisle-stage">Stage / Entrance</div>
+      <div style="font-size:0.5rem;color:#8a7a5a;letter-spacing:0.1em;">6 steps</div>
+      <div class="dance-floor">Dance Floor<br>12 × 12 ft</div>
+      <div class="aisle-lbl">↓ Aisle ↓</div>
+    </div>
+    <div class="floor-side">${RIGHT_ROWS.map(makeRow).join('')}</div>`;
+}
+
+function openTbl(n) {
+  const tg = _guests.filter(g=>g.table===n);
+  const ch = tg.filter(g=>g.checked).length;
+  document.getElementById('tbl-modal-title').textContent = `Table ${n} — ${ch}/${tg.length} checked in`;
+  document.getElementById('tbl-modal-body').innerHTML = tg.length
+    ? tg.map(g=>`
+        <div class="m-guest ${g.checked?'is-in':''}" id="mg-${g.id}">
+          <div>
+            <div class="m-gname">${g.name}</div>
+            ${g.checked?'<div style="font-size:0.72rem;color:var(--checked)">✓ Checked in</div>':''}
+          </div>
+          ${g.checked
+            ?'<button class="m-cbtn done">✓ In</button>'
+            :`<button class="m-cbtn pend" onclick="modalCI(${g.id},${n})">Check In</button>`}
+        </div>`).join('')
+    : '<div class="empty-state">No guests at this table</div>';
+  document.getElementById('tbl-modal').classList.add('show');
+}
+
+async function modalCI(id, tnum) {
+  await fbUpdate(id, {checked:true});
+  // Firebase listener will update global state; re-open modal to refresh
+  openTbl(tnum);
+}
+function closeTblModal() { document.getElementById('tbl-modal').classList.remove('show'); }
+
+// ══════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════
+function renderStats() {
+  const tot = _guests.length;
+  const inn = _guests.filter(g=>g.checked).length;
+  const pnd = tot - inn;
+  document.getElementById('s-total').textContent = tot;
+  document.getElementById('s-in').textContent    = inn;
+  document.getElementById('s-pend').textContent  = pnd;
+  document.getElementById('s-pct').textContent   = tot ? Math.round(inn/tot*100)+'%' : '0%';
+
+  let html='';
+  for(let t=1;t<=26;t++){
+    const tg=_guests.filter(g=>g.table===t);
+    const ch=tg.filter(g=>g.checked).length;
+    const tot2=tg.length;
+    const pct=tot2?Math.round(ch/tot2*100):0;
+    html+=`<div class="prog-row">
+      <div class="prog-lbl">T${t}</div>
+      <div class="prog-bg"><div class="prog-fill" style="width:${pct}%"></div></div>
+      <div class="prog-cnt">${ch}/${tot2}</div>
+    </div>`;
+  }
+  document.getElementById('prog-list').innerHTML = html;
+}
+
+// ══════════════════════════════════════════════════
+// QR CODE
+// ══════════════════════════════════════════════════
+function generateQR() {
+  const el = document.getElementById('qr-code');
+  if(!el) return;
+  el.innerHTML = '';
+  const url = window.location.href.split('?')[0] + '?mode=guest';
+  document.getElementById('qr-url').textContent = url;
+  try {
+    new QRCode(el, {
+      text: url, width:200, height:200,
+      colorDark:'#004D00', colorLight:'#ffffff',
+      correctLevel: QRCode.CorrectLevel.H
+    });
+  } catch(e) {
+    el.innerHTML = '<div style="padding:1.5rem;border:2px dashed #ccc;border-radius:8px;color:#999;font-size:0.8rem;">QR code loads when app is hosted online</div>';
+  }
+}
+
+function printQR() {
+  const qEl = document.getElementById('qr-code');
+  const w = window.open('','_blank');
+  w.document.write(`<html><head><title>Wedding Check-In QR</title>
+  <style>body{font-family:Georgia,serif;text-align:center;padding:3rem;background:white;}
+  h1{color:#004D00;font-size:2rem;}p{color:#777;margin:0.5rem 0;}</style></head>
+  <body><h1>Ayomide &amp; Oyiza</h1>
+  <p>Saturday, April 11, 2026 · Slovenian Hall, Edmonton</p>
+  <p style="margin:1.5rem 0 0.5rem;font-weight:bold;color:#333;">Scan to Check In</p>
+  ${qEl.innerHTML}
+  <p style="margin-top:1rem;font-size:0.8rem;color:#999;">Or visit the check-in desk for usher assistance</p>
+  </body></html>`);
+  w.document.close(); w.print();
+}
+</script>
+</body>
+</html>
